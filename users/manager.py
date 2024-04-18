@@ -9,12 +9,15 @@ users = Blueprint('users', __name__, static_url_path='users/static/', url_prefix
 @users.route('/getTransactions/<string:month>/<string:year>')
 @jwt_required
 def getTransactions(month, year):
-
-    transactions = session.query(Transaction).filter(Transaction.user_id == getUser(), Transaction.date.like(f'%{year}-{month}%')).all()
-
+    budgets = session.query(Budget).filter(Budget.user_id == getUser(), or_(Budget.start.like(f'%{year}-{month}%'), Budget.end.like(f'%{year}-{month}%'))).order_by(Budget.end.desc()).all()
+    
     response = {}
-    for i in transactions:
-        response[transactions.index(i)] = i.as_dict()
+
+    for budget in budgets:
+        transactions = session.query(Transaction).filter(Transaction.budget_id == budget.id, Transaction.date.like(f'%{year}-{month}%')).all()
+
+        for i in transactions:
+            response[transactions.index(i)] = i.as_dict()
 
     return jsonify(response = response)
 
@@ -31,10 +34,12 @@ def createTransaction():
 
         budget = getBudgetNow()
 
+        print(budget.start, budget.end, budget.budget)
+
         newTransaction = Transaction(budget.id, amount, entry, name, description)
 
         if not entry:
-            amount = amount * -1
+            amount = -amount
         
         budget.budget += amount
 

@@ -39,10 +39,6 @@ class User(Base):
         self.default_budget = budget
         self.term = term
 
-        firstBudget = Budget(self.id, self.default_budget, self.term)
-
-        session.add(firstBudget)
-
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
     
@@ -53,11 +49,12 @@ class Budget(Base):
     budget = Column(Double, nullable=False)
     start = Column(Date, nullable=False)
     end = Column(Date, nullable=False)
-    user_id = Column(Uuid, ForeignKey('Users.id'))
 
+    user_id = Column(Uuid, ForeignKey('Users.id'))
     transactions = relationship("Transaction", backref="budget")
 
     def __init__ (self, userId, budget, term):
+        self.id = uuid4()
         self.user_id = userId
         self.budget = budget
         self.start = datetime.now().date()
@@ -74,7 +71,7 @@ class Transaction(Base):
     name = Column(String(225), nullable=False)
     description = Column(String(2000), nullable=True)
 
-    budget_id = Column(Uuid, ForeignKey('Budgets.id'))
+    budget_id = Column(Uuid, ForeignKey('Budgets.id'), nullable=False)
 
     def __init__ (self, budgetId, amount, entry, name, description):
 

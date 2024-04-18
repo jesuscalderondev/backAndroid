@@ -52,7 +52,9 @@ def getUser():
     return UUID(payload.get('id'))
 
 def getBudgetNow():
-    return session.query(Budget).filter(and_(Budget.start < datetime.now().date(), Budget.end >= datetime.now().date(), Budget.user_id == getUser())).first()
+    budget = session.query(Budget).filter(and_(Budget.start <= datetime.now().date(), Budget.end > datetime.now().date(), Budget.user_id == getUser())).first()
+    print(budget)
+    return budget
 
 def requiredSession(f):
     @wraps(f)

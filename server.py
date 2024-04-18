@@ -51,7 +51,9 @@ def register():
         print(data)
         newUser = User(data['email'], passwordHash(data['password']), data['first_name'], data['last_name'], data['budget'], data['term'])
 
-        session.add(newUser)
+        firstBudget = Budget(newUser.id, newUser.default_budget, newUser.term)
+
+        session.add_all([newUser, firstBudget])
         session.commit()
 
         token = creatreJWT(newUser.id)
