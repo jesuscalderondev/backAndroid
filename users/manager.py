@@ -21,6 +21,12 @@ def getTransactions(month, year):
 
     return jsonify(response = response)
 
+
+@users.route('/getData')
+@jwt_required
+def getDataUser():
+    return jsonify(response = session.get(User, getUser()).as_dict())
+
 @users.route('/createTransaction', methods = ['POST'])
 @jwt_required
 def createTransaction():
