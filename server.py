@@ -66,7 +66,7 @@ def register():
 from users.manager import users
 
 app.register_blueprint(users)
+Base.metadata.create_all(engine)
 
 if __name__ == '__main__':
-    Base.metadata.create_all(engine)
     app.run(debug=True)
