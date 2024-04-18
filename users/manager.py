@@ -47,3 +47,6 @@ def createTransaction():
     except Exception as e:
         session.rollback()
         return jsonify(error = f'{e}'), 403
+    
+
+#terminar ediciones
