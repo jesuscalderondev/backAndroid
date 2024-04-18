@@ -31,6 +31,8 @@ En el espacio de <b>token</b> debe ir un token de autenticación
 }
 ```
 
+<hr>
+
 ### /register
 
 El campo <b>term</b> se refiere al termino de días en los que transcurre el presupuesto, ejemplo 15 o 30 días.
