@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from flask import session as cookies
 from dotenv import load_dotenv
-from os import mkdir, path, makedirs, getenv
 from flask_cors import CORS
 from datetime import datetime, timedelta
 from jwt import encode
@@ -14,7 +13,7 @@ from functions import *
 load_dotenv()
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = getenv('SECRET_KEY')
+app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 
 CORS(app, origins=['*'], supports_credentials=True)
 

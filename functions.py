@@ -4,7 +4,7 @@ from flask import request, jsonify
 from functools import wraps
 from jwt import ExpiredSignatureError, InvalidTokenError, decode, encode
 from datetime import datetime, timedelta
-from os import getenv
+import os
 from dotenv import load_dotenv
 from uuid import UUID
 from database.manager import *
@@ -25,7 +25,7 @@ def creatreJWT(id):
         'exp': datetime.utcnow() + timedelta(hours=1)
     }
 
-    return encode(payload, getenv('SECRET_KEY'), algorithm='HS256')
+    return encode(payload, os.environ["SECRET_KEY"], algorithm='HS256')
 
 def jwt_required(f):
     @wraps(f)
@@ -36,7 +36,7 @@ def jwt_required(f):
             return jsonify({'error': 'Falta el token'}), 401
 
         try:
-            payload = decode(token, getenv('SECRET_KEY'), algorithms=['HS256'])
+            payload = decode(token, os.environ["SECRET_KEY"], algorithms=['HS256'])
         except ExpiredSignatureError:
             return jsonify({'error': 'Token expirado'}), 401
         except InvalidTokenError as e:
@@ -48,7 +48,7 @@ def jwt_required(f):
 
 def getUser():
     token = request.headers.get('Authorization').split(" ")[1]
-    payload = decode(token, getenv('SECRET_KEY'), algorithms=['HS256'])
+    payload = decode(token, os.environ["SECRET_KEY"], algorithms=['HS256'])
     return UUID(payload.get('id'))
 
 def getBudgetNow():
@@ -65,7 +65,7 @@ def requiredSession(f):
             return jsonify({'error': 'Falta el token'}), 401
 
         try:
-            payload = decode(token, getenv('SECRET_KEY'), algorithms=['HS256'])
+            payload = decode(token, os.environ["SECRET_KEY"], algorithms=['HS256'])
             cookies["token"] = creatreJWT(payload['email'])
             # Verifica si el usuario está activo (opcional)
         except ExpiredSignatureError:
