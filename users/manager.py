@@ -1,7 +1,6 @@
-from flask import Blueprint, send_file
+from flask import Blueprint
 from database.manager import *
 from functions import *
-from uuid import UUID
 
 users = Blueprint('users', __name__, static_url_path='users/static/', url_prefix='/users')
 
@@ -25,7 +24,12 @@ def getTransactions(month, year):
 @users.route('/getData')
 @jwt_required
 def getDataUser():
-    return jsonify(response = session.get(User, getUser()).as_dict())
+    return jsonify(session.get(User, getUser()).as_dict())
+
+@users.route('/getBudgetNow')
+@jwt_required
+def getBudget():
+    return jsonify(getBudgetNow().as_dict())
 
 @users.route('/createTransaction', methods = ['POST'])
 @jwt_required

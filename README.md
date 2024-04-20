@@ -177,6 +177,59 @@ En el espacio de **token** debe ir un token de autenticación
 }
 ```
 
+### /users/getBudgetNow
+
+Method: **GET**
+
+
+- Headers
+
+En el espacio de **token** debe ir un token de autenticación
+
+```json
+{   
+    "Authorization" : "Bearer <token>",
+    "Content-Type" : "application/json"
+}
+```
+- Response
+
+```json
+{
+    "budget": 41783.0,
+    "end": "Mon, 20 May 2024 00:00:00 GMT",
+    "id": "0f38d4ac-ee6f-4d04-b07d-3c79843a0117",
+    "start": "Sat, 20 Apr 2024 00:00:00 GMT",
+    "transactions": [
+        {
+            "amount": 40000.0,
+            "date": "Sat, 20 Apr 2024 05:40:49 GMT",
+            "description": "Nada",
+            "entry": true,
+            "id": "1f808abc-6f85-4362-8377-acf52b56282e",
+            "name": "Pago de servicios"
+        },
+        {
+            "amount": 3000.0,
+            "date": "Sat, 20 Apr 2024 05:42:33 GMT",
+            "description": "Nada",
+            "entry": true,
+            "id": "fd06ffe3-9b99-430d-a912-255ea904dda1",
+            "name": "Pago de alquiler"
+        },
+        {
+            "amount": 3000.0,
+            "date": "Sat, 20 Apr 2024 05:43:30 GMT",
+            "description": "Nada",
+            "entry": false,
+            "id": "d2bb0cba-41a7-4eb9-9005-15ef4b963243",
+            "name": "Pago de alimentación"
+        }
+    ],
+    "user_id": "c5e6d3c4-ddcc-49aa-af59-12afef59b832"
+}
+```
+
 
 ### Errores
 

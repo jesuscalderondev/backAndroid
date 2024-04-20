@@ -2,20 +2,30 @@ from flask import Flask, request, jsonify, abort
 from flask import session as cookies
 from dotenv import load_dotenv
 from flask_cors import CORS
-from datetime import datetime, timedelta
+from sqlalchemy.exc import *
 from jwt import encode
 import re
 import os
 
-from sqlalchemy.exc import *
 
 from database.manager import *
 from functions import *
 
 app = Flask(__name__)
+
+load_dotenv()
+
 app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 
-CORS(app, origins=['*'], supports_credentials=True)
+CORS(app, origins='*', supports_credentials=True)
+
+blocked_ips = []
+
+@app.before_request
+def block_ip():
+    client_ip = request.remote_addr
+    if client_ip in blocked_ips:
+        abort(403)
 
 @app.route("/")
 def testAbort():
@@ -45,6 +55,9 @@ def login():
 def register():
 
     try:
+
+        print(request.remote_addr)
+        print(request.__dict__)
         data = request.get_json()
         
         if type(data['term']) == float:
@@ -82,9 +95,14 @@ def register():
         elif isinstance(e, Exception):
             error = 'R004'
             message = f'{e}'
+            blocked_ips.append(request.remote_addr)
 
         return jsonify(error = error, message = message), 400
-    
+
+@app.errorhandler(403)
+def errorHandler(e):
+    return jsonify(error = 'EH403', message = 'Usted ha sido bloqueado de nuestro servicio debido a un comportamiento indebido, si la decisión no le parece justa, comuniquese con nuestro soporte')
+
 @app.errorhandler(404)
 def errorHandler(e):
     return jsonify(error = 'EH404', message = 'La ruta a la que intenta acceder no existe, verifique la url')
@@ -107,4 +125,4 @@ app.register_blueprint(users)
 Base.metadata.create_all(engine)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True)

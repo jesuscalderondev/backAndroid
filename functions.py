@@ -1,5 +1,4 @@
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import session as cookies
 from flask import request, jsonify
 from functools import wraps
 from jwt import ExpiredSignatureError, InvalidTokenError, decode, encode
@@ -30,6 +29,7 @@ def jwt_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         print(request.remote_addr)
+        print(request.__dict__)
         token = request.headers.get('Authorization').split(" ")[1]
 
         if not token:
@@ -51,6 +51,6 @@ def getUser():
     payload = decode(token, os.environ["SECRET_KEY"], algorithms=['HS256'])
     return UUID(payload.get('id'))
 
-def getBudgetNow():
+def getBudgetNow() -> Budget:
     budget = session.query(Budget).filter(and_(Budget.start <= datetime.now().date(), Budget.end > datetime.now().date(), Budget.user_id == getUser())).first()
     return budget

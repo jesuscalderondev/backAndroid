@@ -63,6 +63,21 @@ class Budget(Base):
         self.budget = budget
         self.start = datetime.now().date()
         self.end = self.start + timedelta(days=term)
+    
+    def as_dict(self):
+        data = {
+            "transactions" : []
+        }
+        for c in self.__table__.columns:
+            if c.name not in ["transactions"]:
+                data[c.name] = getattr(self, c.name)
+
+        transactions = self.transactions
+        
+        for transaction in transactions:
+            data["transactions"].append(transaction.as_dict())
+
+        return data
 
 
 class Transaction(Base):
