@@ -40,7 +40,11 @@ class User(Base):
         self.term = term
 
     def as_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        data = {}
+        for c in self.__table__.columns:
+            if c.name not in ["password", "id"]:
+                data[c.name] = getattr(self, c.name)
+        return data
     
 
 class Budget(Base):
@@ -84,4 +88,8 @@ class Transaction(Base):
         self.date = datetime.now()
 
     def as_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+        data = {}
+        for c in self.__table__.columns:
+            if c.name not in ["budget_id"]:
+                data[c.name] = getattr(self, c.name)
+        return data

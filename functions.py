@@ -19,7 +19,6 @@ def passwordVerify(passHash:str, passUnHashed:str):
     return check_password_hash(passHash, passUnHashed)
 
 def creatreJWT(id):
-    print(str(id))
     payload = {
         'id': str(id),
         'exp': datetime.utcnow() + timedelta(hours=1)
@@ -30,6 +29,7 @@ def creatreJWT(id):
 def jwt_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        print(request.remote_addr)
         token = request.headers.get('Authorization').split(" ")[1]
 
         if not token:
@@ -37,11 +37,11 @@ def jwt_required(f):
 
         try:
             payload = decode(token, os.environ["SECRET_KEY"], algorithms=['HS256'])
-        except ExpiredSignatureError:
-            return jsonify({'error': 'Token expirado'}), 401
-        except InvalidTokenError as e:
-            print(e)
-            return jsonify({'error': 'Token invalido'}), 401
+        except (ExpiredSignatureError, InvalidTokenError) as e:
+            if isinstance(e, ExpiredSignatureError):
+                return jsonify(error = 'T001', message = 'El token que ha proporcionado se encuentra vencido'), 401
+            elif isinstance(e, InvalidTokenError):
+                return jsonify(error = 'T000', message = 'El token que ha enviado no es válido'), 401
         return f(*args, **kwargs)
 
     return decorated
@@ -53,32 +53,4 @@ def getUser():
 
 def getBudgetNow():
     budget = session.query(Budget).filter(and_(Budget.start <= datetime.now().date(), Budget.end > datetime.now().date(), Budget.user_id == getUser())).first()
-    print(budget)
     return budget
-
-def requiredSession(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = cookies.get("token")
-
-        if not token:
-            return jsonify({'error': 'Falta el token'}), 401
-
-        try:
-            payload = decode(token, os.environ["SECRET_KEY"], algorithms=['HS256'])
-            cookies["token"] = creatreJWT(payload['email'])
-            # Verifica si el usuario está activo (opcional)
-        except ExpiredSignatureError:
-            cookies.pop("token")
-            return jsonify({'error': 'Token expirado'}), 401
-        except InvalidTokenError as e:
-            print(e)
-            return jsonify({'error': 'Token invalido'}), 401
-
-        
-        
-
-        # Si el token es valido, continúa con la función
-        return f(*args, **kwargs)
-
-    return decorated

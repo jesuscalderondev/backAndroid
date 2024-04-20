@@ -19,7 +19,7 @@ def getTransactions(month, year):
         for i in transactions:
             response[transactions.index(i)] = i.as_dict()
 
-    return jsonify(response = response)
+    return jsonify(response)
 
 
 @users.route('/getData')
@@ -39,8 +39,6 @@ def createTransaction():
         description = data['description']
 
         budget = getBudgetNow()
-
-        print(budget.start, budget.end, budget.budget)
 
         newTransaction = Transaction(budget.id, amount, entry, name, description)
 

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 from flask import session as cookies
 from dotenv import load_dotenv
 from flask_cors import CORS
@@ -7,24 +7,24 @@ from jwt import encode
 import re
 import os
 
+from sqlalchemy.exc import *
+
 from database.manager import *
 from functions import *
-
-load_dotenv()
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 
 CORS(app, origins=['*'], supports_credentials=True)
 
+@app.route("/")
+def testAbort():
+    abort(500)
 
 @app.route('/login', methods = ['POST'])
 def login():
     try:
-        try:
-            data = request.get_json()
-        except:
-            data = request.form
+        data = request.get_json()
 
         email = data['email']
         password = data['password']
@@ -33,13 +33,12 @@ def login():
 
         if user != None and passwordVerify(user.password, password):
             token = creatreJWT(user.id)
-            cookies.setdefault("token", token)
             return jsonify(token = token), 200
         else:
-            return jsonify(error = 'Incorrect credentials', message = 'El correo o contraseña son incorrectos, verifique e intente nuevamente.'), 401
+            return jsonify(error = 'L001', message = 'El correo o contraseña son incorrectos, verifique e intente nuevamente.'), 403
     except Exception as e:
-        print(e)
-        return jsonify({'error': f'{e}', 'data' : data}), 403
+        return jsonify(error = 'L000', details = f'{e}', message = 'Se ha producido un error a la hora de enviar los datos, verificar el parametro de details'), 403
+    
 
 
 @app.route('/register', methods = ['POST'])
@@ -47,7 +46,13 @@ def register():
 
     try:
         data = request.get_json()
-        print(data)
+        
+        if type(data['term']) == float:
+            raise StatementError("Se ha detectado un tipo de dato incorrecto", None, None, None)
+        
+        if len(data) > 6:
+            raise Exception("Has enviado más datos de los requeridos... pedimos por favor no repetir esta acción :)")
+
         newUser = User(data['email'], passwordHash(data['password']), data['first_name'], data['last_name'], data['budget'], data['term'])
 
         firstBudget = Budget(newUser.id, newUser.default_budget, newUser.term)
@@ -57,11 +62,44 @@ def register():
 
         token = creatreJWT(newUser.id)
 
-
         return jsonify(token = token), 200
-    except Exception as e:
+        
+
+    except (IntegrityError, StatementError, KeyError, Exception) as e:
         session.rollback()
-        return jsonify(error = f'{e}'), 400
+        if isinstance(e, IntegrityError):
+            error = 'R001'
+            message = 'Este correo ya fue usado con anterioridad'
+
+        elif isinstance(e, StatementError):
+            error = 'R002'
+            message = 'No se admiten letras ni números con comas o puntos en el campo de duración del presupuesto'
+        
+        elif isinstance(e, KeyError):
+            error = 'R003'
+            message = f'Falta el valor para {e} en su petición'
+
+        elif isinstance(e, Exception):
+            error = 'R004'
+            message = f'{e}'
+
+        return jsonify(error = error, message = message), 400
+    
+@app.errorhandler(404)
+def errorHandler(e):
+    return jsonify(error = 'EH404', message = 'La ruta a la que intenta acceder no existe, verifique la url')
+
+@app.errorhandler(405)
+def errorHandler(e):
+    return jsonify(error = 'EH405', message = f'El método {request.method} no es válido para esta url')
+
+@app.errorhandler(415)
+def errorHandler(e):
+    return jsonify(error = 'EH415', message = f'No se ha enviado el tipo de petición correcta verifique que en el header existe *application/json*')
+
+@app.errorhandler(500)
+def errorHandler(e):
+    return jsonify(error = 'EH500', message = 'Hubo un fallo interno en el servidor, comunicarse con el soporte si el error existe')
 
 from users.manager import users
 
@@ -69,4 +107,4 @@ app.register_blueprint(users)
 Base.metadata.create_all(engine)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')
