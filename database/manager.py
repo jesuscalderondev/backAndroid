@@ -106,5 +106,25 @@ class Transaction(Base):
         data = {}
         for c in self.__table__.columns:
             if c.name not in ["budget_id"]:
-                data[c.name] = getattr(self, c.name)
+                if c.name == "date":
+                    dateDef = getattr(self, c.name)
+                    date = int((datetime.now() - dateDef).days // 30)
+                    if 0 < date:
+                        date = f"{date} meses" if date > 1 else "1 mes"
+                    else:
+                        dateh = int((datetime.now() - dateDef).total_seconds() // 3600)
+                        date = (datetime.now() - dateDef).days
+                        if dateh >= 24:
+                            date = f"{date} días" if date > 1 else "1 día"
+                        else:
+                            if dateh >= 1:
+                                date = f"{dateh} horas" if dateh > 1 else "1 hora"
+                            else:
+                                dateh = int((datetime.now() - dateDef).total_seconds() // 60)
+
+                                date = "un momento" if dateh <= 2 else f"{dateh} minutos" 
+
+                    data[c.name] = date
+                else:
+                    data[c.name] = getattr(self, c.name)
         return data

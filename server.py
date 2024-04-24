@@ -21,6 +21,8 @@ CORS(app, origins='*', supports_credentials=True)
 
 blocked_ips = []
 
+datetime.now().strftime("")
+
 @app.before_request
 def block_ip():
     client_ip = request.remote_addr

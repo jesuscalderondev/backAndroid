@@ -26,7 +26,7 @@ Method: **POST**
 En el espacio de **token** debe ir un token de autenticación
 
 ```json
-{   
+{
     "token" : "<token>",
 }
 ```
