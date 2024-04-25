@@ -61,5 +61,20 @@ def createTransaction():
         session.rollback()
         return jsonify(error = f'{e}'), 403
     
+@users.route("/deleteTransaction/<string:id>", methods=['GET'])
+@jwt_required
+def deleteTransaction(id):
+    transaction = session.get(Transaction, UUID(id))
 
-#terminar ediciones
+    if transaction != None:
+        budget = session.get(Budget, transaction.budget_id)
+
+        budget.budget += transaction.amount * (-1)
+
+        session.delete(transaction)
+        session.add(budget)
+        session.commit()
+
+        return jsonify(message = "Transacción eliminada de manera correcta")
+    
+    return jsonify(error = "DT001", message = "La transacción que desea eliminar no existe, tal vez fue eliminada con anterioridad")
