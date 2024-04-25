@@ -69,7 +69,9 @@ def deleteTransaction(id):
     if transaction != None:
         budget = session.get(Budget, transaction.budget_id)
 
-        budget.budget += transaction.amount * (-1)
+        amount = transaction.amount * (-1)  if transaction.entry else transaction.amount
+
+        budget.budget += amount
 
         session.delete(transaction)
         session.add(budget)
