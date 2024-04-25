@@ -77,6 +77,6 @@ def deleteTransaction(id):
         session.add(budget)
         session.commit()
 
-        return jsonify(message = "Transacción eliminada de manera correcta")
+        return jsonify(message = "Transacción eliminada de manera correcta"), 200
     
-    return jsonify(error = "DT001", message = "La transacción que desea eliminar no existe, tal vez fue eliminada con anterioridad")
+    return jsonify(error = "DT001", message = "La transacción que desea eliminar no existe, tal vez fue eliminada con anterioridad"), 400
