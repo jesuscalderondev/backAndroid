@@ -44,6 +44,10 @@ def createTransaction():
 
         budget = getBudgetNow()
 
+        if budget != None:
+            user = session.get(User, getUser())
+            budget = Budget(user.id, user.default_budget, user.term)
+
         newTransaction = Transaction(budget.id, amount, entry, name, description)
 
         if not entry:
@@ -61,6 +65,7 @@ def createTransaction():
         session.rollback()
         return jsonify(error = f'{e}'), 403
     
+
 @users.route("/deleteTransaction/<string:id>", methods=['GET'])
 @jwt_required
 def deleteTransaction(id):
@@ -80,3 +85,99 @@ def deleteTransaction(id):
         return jsonify(message = "Transacción eliminada de manera correcta"), 200
     
     return jsonify(error = "DT001", message = "La transacción que desea eliminar no existe, tal vez fue eliminada con anterioridad"), 400
+
+@users.route("/getGraphicData", methods=["GET"])
+@jwt_required
+def getGraphicData():
+    try:
+        monthWith31Days = [1, 3, 5, 7, 8, 10, 12]
+        monthWith30Days =[4, 6, 9, 11]
+
+        labels = []
+        payments = [0, 0, 0, 0, 0]
+        entrys = [0, 0, 0, 0, 0]
+        maxI = 0
+        maxG = 0
+
+        budget = getBudgetNow()
+
+        transactions = budget.transactions
+
+
+        for transaction in transactions:
+            date = transaction.date.strftime("%d/%m")
+            if date not in labels:
+                labels.append(date)
+
+        labelsLen = len(labels)
+        if labelsLen < 5:
+            
+            
+            for trans in range(labelsLen, 5):
+                dates = labels[0].split("/")
+                dates[1] = int(dates[1])
+                dates[0] = int(dates[0])
+                if dates[0] == 1:
+                    dates[1] = dates[1]-1
+
+                    if dates[0] == 0:
+
+                        dates[1] = 12
+
+                        if dates[1] in monthWith31Days:
+                            dates[0] = 31
+                        elif dates[1] in monthWith30Days:
+                            dates[0] = 30
+                        else:
+                            dates[0] = 28
+                    
+                else:
+                    dates[0] = int(dates[0])-1
+
+                dates[0] = f"0{dates[0]}" if dates[0] < 10 else str(dates[0])
+                dates[1] = f"0{dates[1]}" if dates[1] < 10 else str(dates[1])
+                date = f"{dates[0]}/{dates[1]}"
+                transactionObj = session.query(Transaction).filter(Transaction.date.like(f"%{date}%")).first()
+
+                if transactionObj != None:
+                    date = transactionObj.date.strftime("%d/%m")
+                    
+                labels.insert(0, date)
+
+        labelsLen = len(labels)
+        
+        if labelsLen > 5:
+            dates = [datetime.strptime(date, '%d/%m') for date in labels]
+            
+            dateMin = min(dates)
+            dateMax = max(dates)
+            
+            salt = (dateMax - dateMin) // 5
+            
+            ranges = [dateMax - i * salt for i in range(4)]
+            
+            labels = []
+            for date in ranges:
+                labels.insert(0, date.strftime('%d/%m'))
+            
+            labels.insert(0, dateMin.strftime('%d/%m'))
+
+        
+        for date in range(len(labels)):
+            if date < len(labels)-1:
+                entryRange = session.query(Transaction).filter(and_(Transaction.date >= datetime.strptime(labels[date], '%d/%m'), Transaction.date < datetime.strptime(labels[date+1], '%d/%m'), Transaction.entry == True)).all()
+                paymentRange = session.query(Transaction).filter(and_(Transaction.date >= datetime.strptime(labels[date], '%d/%m'), Transaction.date < datetime.strptime(labels[date+1], '%d/%m'), Transaction.entry == False)).all()
+            else:
+                entryRange = session.query(Transaction).filter(and_(Transaction.date >= datetime.strptime(labels[date], '%d/%m'), Transaction.entry == True)).all()
+                paymentRange = session.query(Transaction).filter(and_(Transaction.date >= datetime.strptime(labels[date], '%d/%m'), Transaction.entry == False)).all()
+
+            
+            entryList = [tr.amount for tr in entryRange]
+            entrys[date] = sum(entryList)
+
+            paymentList = [tr.amount for tr in paymentRange]
+            payments[date] = sum(paymentList)
+
+        return jsonify(labels = labels, gastos = payments, ingresos = entrys, max_i = max(entrys), max_g = max(payments))
+    except Exception as e:
+        return jsonify(error = f"{e}")
