@@ -101,8 +101,7 @@ def getGraphicData():
 
         budget = getBudgetNow()
 
-        transactions = budget.transactions
-
+        transactions = session.query(Transaction).filter(Transaction.budget_id == budget.id).order_by(Transaction.date.asc()).all()
 
         for transaction in transactions:
             date = transaction.date.strftime("%d/%m")
@@ -110,8 +109,11 @@ def getGraphicData():
                 labels.append(date)
 
         labelsLen = len(labels)
+
         if labelsLen < 5:
             
+            if labelsLen == 0:
+                labels = [datetime.now().date().strftime("%d/%m")]
             
             for trans in range(labelsLen, 5):
                 dates = labels[0].split("/")
@@ -164,19 +166,35 @@ def getGraphicData():
 
         
         for date in range(len(labels)):
-            if date < len(labels)-1:
-                entryRange = session.query(Transaction).filter(and_(Transaction.date >= datetime.strptime(labels[date], '%d/%m'), Transaction.date < datetime.strptime(labels[date+1], '%d/%m'), Transaction.entry == True)).all()
-                paymentRange = session.query(Transaction).filter(and_(Transaction.date >= datetime.strptime(labels[date], '%d/%m'), Transaction.date < datetime.strptime(labels[date+1], '%d/%m'), Transaction.entry == False)).all()
-            else:
-                entryRange = session.query(Transaction).filter(and_(Transaction.date >= datetime.strptime(labels[date], '%d/%m'), Transaction.entry == True)).all()
-                paymentRange = session.query(Transaction).filter(and_(Transaction.date >= datetime.strptime(labels[date], '%d/%m'), Transaction.entry == False)).all()
+
+            splits = labels[date].split("/")
+            splits = [int(la) for la in splits]
+
+            date1 = datetime(2024, splits[1], splits[0])
+
+            budgetDate = session.query(Budget).filter(Budget.user_id == getUser(), and_(Budget.start <= date1, date1 < Budget.end)).first()
 
             
-            entryList = [tr.amount for tr in entryRange]
-            entrys[date] = sum(entryList)
 
-            paymentList = [tr.amount for tr in paymentRange]
-            payments[date] = sum(paymentList)
+            if budgetDate != None:
+                if date < len(labels)-1:
+                    splits2 = labels[date+1].split("/")
+                    splits2 = [int(la) for la in splits2]
+
+                    entryRange = session.query(Transaction).filter(and_(Transaction.date >= date1, Transaction.date < datetime(2024, int(splits2[1]), int(splits2[0])), Transaction.entry == True, Transaction.budget_id == budgetDate.id)).all()
+                    paymentRange = session.query(Transaction).filter(and_(Transaction.date >= date1, Transaction.date < datetime(2024, int(splits2[1]), int(splits2[0])), Transaction.entry == False, Transaction.budget_id == budgetDate.id)).all()
+
+                else:
+                    entryRange = session.query(Transaction).filter(and_(Transaction.date >= date1, Transaction.entry == True, Transaction.budget_id == budgetDate.id)).all()
+                    paymentRange = session.query(Transaction).filter(and_(Transaction.date >= date1, Transaction.entry == False, Transaction.budget_id == budgetDate.id)).all()
+
+                entryList = [tr.amount for tr in entryRange]
+
+                entrys[date] = sum(entryList)
+
+                paymentList = [tr.amount for tr in paymentRange]
+                payments[date] = sum(paymentList)
+            
 
         return jsonify(labels = labels, gastos = payments, ingresos = entrys, max_i = max(entrys), max_g = max(payments))
     except Exception as e:

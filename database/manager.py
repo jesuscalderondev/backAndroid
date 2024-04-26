@@ -2,7 +2,7 @@ from sqlalchemy import Integer, String, Uuid, Double, Column, Boolean, DateTime,
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, backref
 from sqlalchemy import create_engine, and_, or_
 from datetime import datetime, timedelta
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 
 url = f'sqlite:///database.sqlite'
@@ -78,6 +78,7 @@ class Budget(Base):
             data["transactions"].append(transaction.as_dict())
 
         return data
+    
 
 
 class Transaction(Base):

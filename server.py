@@ -57,9 +57,6 @@ def login():
 def register():
 
     try:
-
-        print(request.remote_addr)
-        print(request.__dict__)
         data = request.get_json()
         
         if type(data['term']) == float:

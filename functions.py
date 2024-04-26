@@ -28,8 +28,6 @@ def creatreJWT(id):
 def jwt_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        print(request.remote_addr)
-        print(request.__dict__)
         token = request.headers.get('Authorization').split(" ")[1]
 
         if not token:
