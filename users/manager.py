@@ -44,7 +44,7 @@ def createTransaction():
 
         budget = getBudgetNow()
 
-        if budget != None:
+        if budget == None:
             user = session.get(User, getUser())
             budget = Budget(user.id, user.default_budget, user.term)
 
